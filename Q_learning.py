@@ -68,33 +68,22 @@ def q_learning(n_timesteps, learning_rate, gamma, policy='egreedy', epsilon=None
 
     env = StochasticWindyGridworld(initialize_model=False)
     pi = QLearningAgent(env.n_states, env.n_actions, learning_rate, gamma)
-    #rewards = np.zeros((n_timesteps, []))
 
-    rewards = {}
-
-# append reward to rewards[t] at each timestep
-
-
-    
+    rewards = []
 
     for t in range(n_timesteps):
-        
+
         s = env.reset()
         done = False
-
-        rewards[t] = []
-
+        rewards.append(0)
         while not done:
             a = pi.select_action(s, policy, epsilon, temp)
             s_next, r, done = env.step(a)
             pi.update(s, a, r, s_next, done)
             s = s_next
 
-            rewards[t].append(r)
-         
-            
-          # np.append(rewards[t], r)
-
+            rewards[t] += r
+        
     if plot:
         env.render(Q_sa=pi.Q_sa, plot_optimal_policy=True,
                    step_pause=10)
@@ -118,7 +107,8 @@ def test():
 
     rewards = q_learning(n_timesteps, learning_rate,
                          gamma, policy, epsilon, temp, plot)
-    print("Obtained rewards: {}".format(rewards))
+
+    return rewards
 
 
 if __name__ == '__main__':
