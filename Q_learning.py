@@ -21,12 +21,6 @@ class QLearningAgent:
         self.gamma = gamma
         self.Q_sa = np.zeros((n_states, n_actions))
 
-    # custom code
-    def greedy(self, epsilon):
-        probability = 1 - epsilon * (self.n_actions - 1) / self.n_actions
-        if (np.random.choice(self.n_actions, p=probability)):
-            return argmax(self.Q_sa[s])
-
     def select_action(self, s, policy='egreedy', epsilon=None, temp=None):
 
         if policy == 'egreedy':
@@ -36,10 +30,11 @@ class QLearningAgent:
             # TO DO: Add own code
             # a = np.random.randint(0,self.n_actions) # Replace this with correct action selection
             # np.random.choice(self.n_actions, p=)
-            if (np.random.rand(0, 1) > epsilon):
-                a = np.random.choice(self.Q_sa[s])
+            if (np.random.uniform(0, 1) >= epsilon):
+                a = argmax(self.Q_sa[s])
+
             else:
-                a = np.argmax(self.Q_sa[s])
+                a = np.random.choice(4)
 
         elif policy == 'softmax':
             if temp is None:
@@ -52,7 +47,6 @@ class QLearningAgent:
         return a
 
     def update(self, s, a, r, s_next, done):
-
         if done:
             pass
 
@@ -71,29 +65,30 @@ def q_learning(n_timesteps, learning_rate, gamma, policy='egreedy', epsilon=None
 
     rewards = []
 
+    s = env.reset()
+    done = False
     for t in range(n_timesteps):
 
-        s = env.reset()
-        done = False
-        rewards.append(0)
-        while not done:
-            a = pi.select_action(s, policy, epsilon, temp)
-            s_next, r, done = env.step(a)
-            pi.update(s, a, r, s_next, done)
-            s = s_next
+        a = pi.select_action(s, policy, epsilon, temp)
+        s_next, r, done = env.step(a)
+        pi.update(s, a, r, s_next, done)
+        s = s_next
 
-            rewards[t] += r
-        
-    if plot:
-        env.render(Q_sa=pi.Q_sa, plot_optimal_policy=True,
-                   step_pause=10)
+        rewards.append(r)
+
+        if done:
+            s = env.reset()
+
+        # if plot:
+        #     env.render(Q_sa=pi.Q_sa, plot_optimal_policy=True,
+        #                step_pause=0.01)
 
     return rewards
 
 
 def test():
 
-    n_timesteps = 1000
+    n_timesteps = 10000
     gamma = 1.0
     learning_rate = 0.1
 
@@ -107,7 +102,7 @@ def test():
 
     rewards = q_learning(n_timesteps, learning_rate,
                          gamma, policy, epsilon, temp, plot)
-
+    print(rewards)
     return rewards
 
 

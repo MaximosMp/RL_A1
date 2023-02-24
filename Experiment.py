@@ -22,24 +22,19 @@ def average_over_repetitions(backup, n_repetitions, n_timesteps, max_episode_len
     reward_results = np.empty([n_repetitions, n_timesteps])  # Result array
     now = time.time()
 
-    rewards_cumulative_list = []
-
     for rep in range(n_repetitions):  # Loop over repetitions
         if backup == 'q':
             rewards = q_learning(n_timesteps, learning_rate,
                                  gamma, policy, epsilon, temp, plot)
-            
-    
-
-        # elif backup == 'sarsa':
-        #     rewards = sarsa(n_timesteps, learning_rate, gamma, policy, epsilon, temp, plot)
-        # elif backup == 'mc':
-        #     rewards = monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma,
-        #            policy, epsilon, temp, plot)
-        # elif backup == 'nstep':
-        #     rewards = n_step_Q(n_timesteps, max_episode_length, learning_rate, gamma,
-        #            policy, epsilon, temp, plot, n=n)
-
+        elif backup == 'sarsa':
+            rewards = sarsa(n_timesteps, learning_rate, gamma, policy, epsilon, temp, plot)
+        elif backup == 'mc':
+            rewards = monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma,
+                   policy, epsilon, temp, plot)
+        elif backup == 'nstep':
+            rewards = n_step_Q(n_timesteps, max_episode_length, learning_rate, gamma,
+                   policy, epsilon, temp, plot, n=n)
+        
         reward_results[rep] = rewards
 
     print('Running one setting takes {} minutes'.format((time.time()-now)/60))
@@ -58,7 +53,7 @@ def experiment():
     plot = False  # Plotting is very slow, switch it off when we run repetitions
 
     # MDP
-    n_timesteps = 50000
+    n_timesteps = 1002
     max_episode_length = 150
     gamma = 1.0
     # Parameters we will vary in the experiments, set them to some initial values:
@@ -85,43 +80,43 @@ def experiment():
     optimal_average_reward_per_timestep = 1.3
 
     # Assignment 2: Effect of exploration
-    policy = 'egreedy'
-    # epsilon = [0.02,0.1,0.3] and softmax with temps = [0.01,0.1,1.0].
-    epsilons = [0.02, 0.1, 0.3]
-    learning_rate = 0.25
-    backup = 'q'
-    Plot = LearningCurvePlot(
-        title='Exploration: $\epsilon$-greedy versus softmax exploration')
-    for epsilon in epsilons:
-        learning_curve = average_over_repetitions(backup, n_repetitions, n_timesteps, max_episode_length, learning_rate,
-                                                  gamma, policy, epsilon, temp, smoothing_window, plot, n)
-        Plot.add_curve(
-            learning_curve, label=r'$\epsilon$-greedy, $\epsilon $ = {}'.format(epsilon))
-    policy = 'softmax'
-    temps = [0.01, 0.1, 1.0]
-    for temp in temps:
-        learning_curve = average_over_repetitions(backup, n_repetitions, n_timesteps, max_episode_length, learning_rate,
-                                                  gamma, policy, epsilon, temp, smoothing_window, plot, n)
-        Plot.add_curve(
-            learning_curve, label=r'softmax, $ \tau $ = {}'.format(temp))
-    Plot.add_hline(optimal_average_reward_per_timestep, label="DP optimum")
-    Plot.save('exploration.png')
+    # policy = 'egreedy'
+    # # epsilon = [0.02,0.1,0.3] and softmax with temps = [0.01,0.1,1.0].
+    # epsilons = [0.02, 0.1, 0.3]
+    # learning_rate = 0.25
+    # backup = 'q'
+    # Plot = LearningCurvePlot(
+    #     title='Exploration: $\epsilon$-greedy versus softmax exploration')
+    # for epsilon in epsilons:
+    #     learning_curve = average_over_repetitions(backup, n_repetitions, n_timesteps, max_episode_length, learning_rate,
+    #                                               gamma, policy, epsilon, temp, smoothing_window, plot, n)
+    #     Plot.add_curve(
+    #         learning_curve, label=r'$\epsilon$-greedy, $\epsilon $ = {}'.format(epsilon))
+    # policy = 'softmax'
+    # temps = [0.01, 0.1, 1.0]
+    # for temp in temps:
+    #     learning_curve = average_over_repetitions(backup, n_repetitions, n_timesteps, max_episode_length, learning_rate,
+    #                                               gamma, policy, epsilon, temp, smoothing_window, plot, n)
+    #     Plot.add_curve(
+    #         learning_curve, label=r'softmax, $ \tau $ = {}'.format(temp))
+    # Plot.add_hline(optimal_average_reward_per_timestep, label="DP optimum")
+    # Plot.save('exploration.png')
 
-    return
-    # Assignment 3: Q-learning versus SARSA
-    policy = 'egreedy'
-    epsilon = 0.1  # set epsilon back to original value
-    learning_rates = [0.02, 0.1, 0.4]
-    backups = ['q', 'sarsa']
-    Plot = LearningCurvePlot(title='Back-up: on-policy versus off-policy')
-    for backup in backups:
-        for learning_rate in learning_rates:
-            learning_curve = average_over_repetitions(backup, n_repetitions, n_timesteps, max_episode_length, learning_rate,
-                                                      gamma, policy, epsilon, temp, smoothing_window, plot, n)
-            Plot.add_curve(learning_curve, label=r'{}, $\alpha$ = {} '.format(
-                backup_labels[backup], learning_rate))
-    Plot.add_hline(optimal_average_reward_per_timestep, label="DP optimum")
-    Plot.save('on_off_policy.png')
+
+    # # Assignment 3: Q-learning versus SARSA
+    # policy = 'egreedy'
+    # epsilon = 0.1  # set epsilon back to original value
+    # learning_rates = [0.02, 0.1, 0.4]
+    # backups = ['q', 'sarsa']
+    # Plot = LearningCurvePlot(title='Back-up: on-policy versus off-policy')
+    # for backup in backups:
+    #     for learning_rate in learning_rates:
+    #         learning_curve = average_over_repetitions(backup, n_repetitions, n_timesteps, max_episode_length, learning_rate,
+    #                                                   gamma, policy, epsilon, temp, smoothing_window, plot, n)
+    #         Plot.add_curve(learning_curve, label=r'{}, $\alpha$ = {} '.format(
+    #             backup_labels[backup], learning_rate))
+    # Plot.add_hline(optimal_average_reward_per_timestep, label="DP optimum")
+    # Plot.save('on_off_policy.png')
 
     # ##### Assignment 4: Back-up depth
     policy = 'egreedy'
