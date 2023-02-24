@@ -28,10 +28,10 @@ class NstepQLearningAgent:
             if epsilon is None:
                 raise KeyError("Provide an epsilon")
 
-            if (np.random.rand(0, 1) > epsilon):
-                a = np.random.choice(self.Q_sa[s])
-            else:
+            if (np.random.uniform(0, 1) > epsilon):
                 a = np.argmax(self.Q_sa[s])
+            else:
+                a = np.random.choice(4)
 
         elif policy == 'softmax':
             if temp is None:
@@ -74,8 +74,8 @@ def n_step_Q(n_timesteps, max_episode_length, learning_rate, gamma,
     pi = NstepQLearningAgent(
         env.n_states, env.n_actions, learning_rate, gamma, n)
 
+    rewards = np.zeros(n_timesteps)
     for _ in range(n_timesteps):
-        rewards = []
         states = []
         actions = []
 
@@ -88,17 +88,17 @@ def n_step_Q(n_timesteps, max_episode_length, learning_rate, gamma,
 
             s_next, r, done = env.step(a)
             states.append(s_next)
-            rewards.append(r)
+            rewards[_] += r
             if done:
                 break
 
             s = s_next
 
         
-        if plot:
-            # Plot the Q-value estimates during n-step Q-learning execution
-            env.render(Q_sa=pi.Q_sa, plot_optimal_policy=True,
-                        step_pause=0.01)
+        # if plot:
+        #     # Plot the Q-value estimates during n-step Q-learning execution
+        #     env.render(Q_sa=pi.Q_sa, plot_optimal_policy=True,
+        #                 step_pause=0.01)
 
         pi.update(states, actions, rewards, done)
     return rewards

@@ -30,10 +30,10 @@ class SarsaAgent:
             # TO DO: Add own code
             # a = np.random.randint(0,self.n_actions) # Replace this with correct action selection
             # np.random.choice(self.n_actions, p=)
-            if (np.random.rand(0, 1) > epsilon):
-                a = np.random.choice(self.Q_sa[s])
-            else:
+            if (np.random.uniform(0, 1) > epsilon):
                 a = np.argmax(self.Q_sa[s])
+            else:
+                a = np.random.choice(4)
 
         elif policy == 'softmax':
             if temp is None:
@@ -61,27 +61,29 @@ def sarsa(n_timesteps, learning_rate, gamma, policy='egreedy', epsilon=None, tem
 
     env = StochasticWindyGridworld(initialize_model=False)
     pi = SarsaAgent(env.n_states, env.n_actions, learning_rate, gamma)
-    rewards = {}
+    rewards = []
 
     # TO DO: Write your SARSA algorithm here!
 
-    
-
+    s = env.reset()
+    a = pi.select_action(s, policy, epsilon, temp)
+    done = False
     for t in range(n_timesteps):
-        rewards[t] = []
-        s = env.reset()
-        a = pi.select_action(s, policy, epsilon, temp)
-        done = False
-        while not done:
-            s_next, r, done = env.step(a)
-            a_next = pi.select_action(s_next, policy, epsilon, temp)
-            pi.update(s, a, r, s_next, a_next, done)
-            s = s_next
-            a = a_next
-            rewards[t].append(r)
 
-            if plot:
-                env.render(Q_sa=pi.Q_sa,plot_optimal_policy=True,step_pause=0.001) # Plot the Q-value estimates during SARSA execution
+        s_next, r, done = env.step(a)
+
+        a_next = pi.select_action(s_next, policy, epsilon, temp)
+        pi.update(s, a, r, s_next, a_next, done)
+        s = s_next
+        a = a_next
+        rewards.append(r)
+
+        if done:
+            s = env.reset()
+        if plot:
+            # Plot the Q-value estimates during SARSA execution
+            env.render(Q_sa=pi.Q_sa, plot_optimal_policy=True,
+                        step_pause=0.001)
 
     return rewards
 

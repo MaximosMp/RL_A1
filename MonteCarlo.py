@@ -27,10 +27,10 @@ class MonteCarloAgent:
             if epsilon is None:
                 raise KeyError("Provide an epsilon")
 
-            if (np.random.rand(0, 1) > epsilon):
-                a = np.random.choice(self.Q_sa[s])
-            else:
+            if (np.random.uniform(0, 1) > epsilon):
                 a = argmax(self.Q_sa[s])
+            else:
+                a = np.random.choice(4)
 
         elif policy == 'softmax':
             if temp is None:
@@ -72,11 +72,9 @@ def monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma,
     pi = MonteCarloAgent(env.n_states, env.n_actions, learning_rate, gamma)
 
     # TO DO: Write your Monte Carlo RL algorithm here!
-    rewards = {}
+    rewards = np.zeros(n_timesteps)
 
     for _ in range(n_timesteps):
-        rewards[_] = []
-        
         states = []
         actions = []
         
@@ -89,16 +87,15 @@ def monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma,
             actions.append(a)
 
             s_next, r, done = env.step(a)
-            #rewards.append(r)
         
-            rewards[_].append(r)
+            rewards[_] += r
             states.append(s_next)
             if done:
-                break
+                s = env.reset()
 
             s = s_next
 
-        pi.update(states, actions, rewards[_])
+        pi.update(states, actions, rewards)
 
         # if plot:
         #     # Plot the Q-value estimates during n-step Q-learning execution
