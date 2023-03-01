@@ -47,9 +47,6 @@ class QLearningAgent:
         return a
 
     def update(self, s, a, r, s_next, done):
-        if done:
-            pass
-
         Gt = r + self.gamma * np.max(self.Q_sa[s_next])
 
         self.Q_sa[s, a] = self.Q_sa[s, a] + \
