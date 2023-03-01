@@ -49,10 +49,7 @@ class MonteCarloAgent:
         done indicates whether the final s in states is was a terminal state '''
         Tep = len(states) - 1 # 101
         G = np.zeros(Tep + 1) # 100
-        #print('states',rewards[99])
-        #print('Episodes',Tep)
-        #print(G.shape)
-
+        
         for t in range(Tep - 1, 0, -1):
             
             # print(states[t])
@@ -70,11 +67,11 @@ def monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma,
 
     env = StochasticWindyGridworld(initialize_model=False)
     pi = MonteCarloAgent(env.n_states, env.n_actions, learning_rate, gamma)
-
-    # TO DO: Write your Monte Carlo RL algorithm here!
+    
     rewards = np.zeros(n_timesteps)
 
     for _ in range(n_timesteps):
+        rewards_per_episode = []
         states = []
         actions = []
         
@@ -87,7 +84,7 @@ def monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma,
             actions.append(a)
 
             s_next, r, done = env.step(a)
-        
+            rewards_per_episode.append(r)
             rewards[_] += r
             states.append(s_next)
             if done:
@@ -95,7 +92,7 @@ def monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma,
 
             s = s_next
 
-        pi.update(states, actions, rewards)
+        pi.update(states, actions, rewards_per_episode)
 
         # if plot:
         #     # Plot the Q-value estimates during n-step Q-learning execution
