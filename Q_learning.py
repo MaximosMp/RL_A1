@@ -27,9 +27,6 @@ class QLearningAgent:
             if epsilon is None:
                 raise KeyError("Provide an epsilon")
 
-            # TO DO: Add own code
-            # a = np.random.randint(0,self.n_actions) # Replace this with correct action selection
-            # np.random.choice(self.n_actions, p=)
             if (np.random.uniform(0, 1) >= epsilon):
                 a = argmax(self.Q_sa[s])
 
@@ -68,6 +65,7 @@ def q_learning(n_timesteps, learning_rate, gamma, policy='egreedy', epsilon=None
 
         a = pi.select_action(s, policy, epsilon, temp)
         s_next, r, done = env.step(a)
+        epsilon = epsilon * 0.95
         pi.update(s, a, r, s_next, done)
         s = s_next
 
