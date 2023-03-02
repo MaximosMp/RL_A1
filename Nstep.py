@@ -74,8 +74,10 @@ def n_step_Q(n_timesteps, max_episode_length, learning_rate, gamma,
     pi = NstepQLearningAgent(
         env.n_states, env.n_actions, learning_rate, gamma, n)
 
-    rewards = np.zeros(n_timesteps)
-    for _ in range(n_timesteps):
+    rewards = []
+    index = 0
+    while index < n_timesteps:
+        # for _ in range(n_timesteps):
         rewards_per_episode = []
         states = []
         actions = []
@@ -83,20 +85,18 @@ def n_step_Q(n_timesteps, max_episode_length, learning_rate, gamma,
         s = env.reset()
         states.append(s)
         for t in range(max_episode_length):
-
+            index += 1
             a = pi.select_action(s, policy, epsilon, temp)
             actions.append(a)
 
             s_next, r, done = env.step(a)
             states.append(s_next)
             rewards_per_episode.append(r)
-            rewards[_] += r
+            rewards.append(r)
             s = s_next
-            if done:
+            if done or index >= n_timesteps:
                 break
 
-
-        
         # if plot:
         #     # Plot the Q-value estimates during n-step Q-learning execution
         #     env.render(Q_sa=pi.Q_sa, plot_optimal_policy=True,

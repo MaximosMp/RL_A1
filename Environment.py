@@ -51,6 +51,9 @@ class StochasticWindyGridworld:
         # Set agent to the start location
         self.reset() 
 
+    def saveFig(self, filename):
+        plt.savefig(filename)
+    
     def reset(self):
         ''' set the agent back to the start location '''
         self.agent_location = np.array(self.start_location)

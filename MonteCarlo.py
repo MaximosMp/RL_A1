@@ -47,11 +47,11 @@ class MonteCarloAgent:
         actions is a list of actions observed in the episode, of length T_ep
         rewards is a list of rewards observed in the episode, of length T_ep
         done indicates whether the final s in states is was a terminal state '''
-        Tep = len(states) - 1 # 101
-        G = np.zeros(Tep + 1) # 100
-        
+        Tep = len(states) - 1  # 101
+        G = np.zeros(Tep + 1)  # 100
+
         for t in range(Tep - 1, 0, -1):
-            
+
             # print(states[t])
             G[t] = self.gamma*G[t + 1] + rewards[t]
 
@@ -67,30 +67,33 @@ def monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma,
 
     env = StochasticWindyGridworld(initialize_model=False)
     pi = MonteCarloAgent(env.n_states, env.n_actions, learning_rate, gamma)
-    
-    rewards = np.zeros(n_timesteps)
 
-    for _ in range(n_timesteps):
+    rewards = []
+    index = 0
+    while index < n_timesteps:
         rewards_per_episode = []
         states = []
         actions = []
-        
+
         s = env.reset()
         states.append(s)
-
+        
         for t in range(max_episode_length):
-
+            index += 1
             a = pi.select_action(s, policy, epsilon, temp)
             actions.append(a)
 
             s_next, r, done = env.step(a)
             rewards_per_episode.append(r)
-            rewards[_] += r
+            # rewards[_] += r
+            rewards.append(r)
             states.append(s_next)
-            if done:
-                s = env.reset()
+            if done or index >= n_timesteps:
+                break
 
             s = s_next
+
+        # rewards[_] /= t + 1
 
         pi.update(states, actions, rewards_per_episode)
 
@@ -119,7 +122,6 @@ def test():
                           policy, epsilon, temp, plot)
     print("Obtained rewards: {}".format(rewards[49999]))
 
+
 if __name__ == '__main__':
     test()
-
-
