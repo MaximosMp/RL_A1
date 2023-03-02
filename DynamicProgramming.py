@@ -48,6 +48,7 @@ def Q_value_iteration(env, gamma=1.0, threshold=0.001):
 
     # TO DO: IMPLEMENT Q-VALUE ITERATION HERE
 
+    count = 0
     while True:
 
         max_error = 0  # Reset max error
@@ -60,11 +61,22 @@ def Q_value_iteration(env, gamma=1.0, threshold=0.001):
                 QIagent.update(s, a, env.p_sas, env.r_sas)
 
                 max_error = max(max_error, abs(x - QIagent.Q_sa[s, a]))
-
-        # print("Max error is getting lower and lower: ", max_error)
+        if count == 0:
+            env.render(Q_sa=QIagent.Q_sa,
+                        plot_optimal_policy=True, step_pause=0.001)
+            env.saveFig('step_' + str(count))
+        if count == 8:
+            env.render(Q_sa=QIagent.Q_sa,
+                        plot_optimal_policy=True, step_pause=0.001)
+            env.saveFig('step_' + str(count))
+        count += 1
         if max_error < threshold:
             break
 
+    env.render(Q_sa=QIagent.Q_sa,
+                plot_optimal_policy=True, step_pause=0.001)
+    env.saveFig('step_' + str(count))
+    print(count)
     return QIagent
 
 
@@ -72,7 +84,7 @@ def experiment():
     gamma = 1.0
     threshold = 0.001
     env = StochasticWindyGridworld(initialize_model=True)
-    # env.render()
+    env.render()
     QIagent = Q_value_iteration(env, gamma, threshold)
 
     # View optimal policy
@@ -84,7 +96,7 @@ def experiment():
     s = env.reset()
 
     rewards = []
-    
+
     step = 0
     while not done:
         a = QIagent.select_action(s)
@@ -93,13 +105,12 @@ def experiment():
         step += 1
         rewards.append(r)
         s = s_next
-        
-        if step == 1:
-            env.render(Q_sa=QIagent.Q_sa, plot_optimal_policy=True, step_pause=0.2)
-            
-    
+        # env.render(Q_sa=QIagent.Q_sa,
+        #            plot_optimal_policy=True, step_pause=0.001)
+
+
     mean_reward_per_timestep = np.sum(rewards) / len(rewards)
-    
+
     # print("Mean reward per timestep under optimal policy: {}".format(
     #     mean_reward_per_timestep))
 
@@ -107,11 +118,12 @@ def experiment():
 
 
 if __name__ == '__main__':
-    mean_rewards_per_run = []
-    for i in range(50):
-        mean_reward_per_timestep = experiment()
-        mean_rewards_per_run.append(mean_reward_per_timestep)
+    experiment()
+    # mean_rewards_per_run = []
+    # for i in range(50):
+    #     mean_reward_per_timestep = experiment()
+    #     mean_rewards_per_run.append(mean_reward_per_timestep)
 
-    mean_rewards_per_run = np.sum(
-        mean_rewards_per_run) / len(mean_rewards_per_run)
-    print(mean_rewards_per_run)
+    # mean_rewards_per_run = np.sum(
+    #     mean_rewards_per_run) / len(mean_rewards_per_run)
+    # print(mean_rewards_per_run)

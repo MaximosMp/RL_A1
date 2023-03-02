@@ -65,7 +65,7 @@ def q_learning(n_timesteps, learning_rate, gamma, policy='egreedy', epsilon=None
 
         a = pi.select_action(s, policy, epsilon, temp)
         s_next, r, done = env.step(a)
-        epsilon = epsilon * 0.95
+        # epsilon = epsilon * 0.95
         pi.update(s, a, r, s_next, done)
         s = s_next
 
