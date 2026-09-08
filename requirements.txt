@@ -1,0 +1,6 @@
+# Developed on Python 3.10 (spring 2023). Only three dependencies, none of them
+# version-sensitive, so these are lower bounds rather than pins -- the code runs
+# unchanged on current releases.
+numpy>=1.21
+matplotlib>=3.5
+scipy>=1.7
