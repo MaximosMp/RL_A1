@@ -10,3 +10,6 @@ venv/
 
 # OS
 .DS_Store
+
+# Course material: kept locally, deliberately not published
+RL_A1.pdf
