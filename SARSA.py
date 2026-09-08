@@ -9,7 +9,7 @@ By Thomas Moerland
 
 import numpy as np
 from Environment import StochasticWindyGridworld
-from Helper import softmax, argmax
+from Helper import softmax
 
 
 class SarsaAgent:
@@ -27,32 +27,30 @@ class SarsaAgent:
             if epsilon is None:
                 raise KeyError("Provide an epsilon")
 
-            # TO DO: Add own code
-            # a = np.random.randint(0,self.n_actions) # Replace this with correct action selection
-            # np.random.choice(self.n_actions, p=)
-            if (np.random.uniform(0, 1) > epsilon):
+            if np.random.uniform(0, 1) > epsilon:
+                # NOTE: this is np.argmax, not Helper.argmax, so ties are broken
+                # towards the lowest action index instead of at random. See
+                # "Known issues" in the README.
                 a = np.argmax(self.Q_sa[s])
             else:
-                a = np.random.choice(4)
+                a = np.random.choice(self.n_actions)
 
         elif policy == 'softmax':
             if temp is None:
                 raise KeyError("Provide a temperature")
 
-            # TO DO: Add own code
-            # Replace this with correct action selection
             a = np.random.choice(self.n_actions, p=softmax(self.Q_sa[s], temp))
 
         return a
 
     def update(self, s, a, r, s_next, a_next, done):
-
-        if done:
-            pass
+        # No bootstrap past a terminal state. Q_sa rows for terminal states are
+        # never updated and so stay zero, which makes this equivalent to the
+        # unconditional form the report was produced with.
+        target = r if done else r + self.gamma * self.Q_sa[s_next, a_next]
 
         self.Q_sa[s, a] = self.Q_sa[s, a] + \
-            self.learning_rate * \
-            (r + self.gamma*self.Q_sa[s_next, a_next] - self.Q_sa[s, a])
+            self.learning_rate * (target - self.Q_sa[s, a])
 
 
 def sarsa(n_timesteps, learning_rate, gamma, policy='egreedy', epsilon=None, temp=None, plot=True):
@@ -63,11 +61,8 @@ def sarsa(n_timesteps, learning_rate, gamma, policy='egreedy', epsilon=None, tem
     pi = SarsaAgent(env.n_states, env.n_actions, learning_rate, gamma)
     rewards = []
 
-    # TO DO: Write your SARSA algorithm here!
-
     s = env.reset()
     a = pi.select_action(s, policy, epsilon, temp)
-    done = False
     for t in range(n_timesteps):
 
         s_next, r, done = env.step(a)
@@ -103,7 +98,7 @@ def test():
 
     rewards = sarsa(n_timesteps, learning_rate, gamma,
                     policy, epsilon, temp, plot)
-    print("Obtained rewards: {}".format(rewards))
+    print("Mean reward per timestep: {:.3f}".format(np.mean(rewards)))
 
 
 if __name__ == '__main__':
