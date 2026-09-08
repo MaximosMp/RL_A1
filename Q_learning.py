@@ -27,24 +27,27 @@ class QLearningAgent:
             if epsilon is None:
                 raise KeyError("Provide an epsilon")
 
-            if (np.random.uniform(0, 1) >= epsilon):
+            if np.random.uniform(0, 1) >= epsilon:
                 a = argmax(self.Q_sa[s])
-
             else:
-                a = np.random.choice(4)
+                a = np.random.choice(self.n_actions)
 
         elif policy == 'softmax':
             if temp is None:
                 raise KeyError("Provide a temperature")
 
-            # TO DO: Add own code
-            # Replace this with correct action selection
             a = np.random.choice(self.n_actions, p=softmax(self.Q_sa[s], temp))
 
         return a
 
     def update(self, s, a, r, s_next, done):
-        Gt = r + self.gamma * np.max(self.Q_sa[s_next])
+        # No bootstrap past a terminal state. Q_sa rows for terminal states are
+        # never updated and so stay zero, which makes this branch equivalent to
+        # the unconditional form the report was produced with.
+        if done:
+            Gt = r
+        else:
+            Gt = r + self.gamma * np.max(self.Q_sa[s_next])
 
         self.Q_sa[s, a] = self.Q_sa[s, a] + \
             self.learning_rate * (Gt - self.Q_sa[s, a])
@@ -60,12 +63,10 @@ def q_learning(n_timesteps, learning_rate, gamma, policy='egreedy', epsilon=None
     rewards = []
 
     s = env.reset()
-    done = False
     for t in range(n_timesteps):
 
         a = pi.select_action(s, policy, epsilon, temp)
         s_next, r, done = env.step(a)
-        # epsilon = epsilon * 0.95
         pi.update(s, a, r, s_next, done)
         s = s_next
 
@@ -74,9 +75,10 @@ def q_learning(n_timesteps, learning_rate, gamma, policy='egreedy', epsilon=None
         if done:
             s = env.reset()
 
-        # if plot:
-        #     env.render(Q_sa=pi.Q_sa, plot_optimal_policy=True,
-        #                step_pause=0.01)
+        if plot:
+            # Plot the Q-value estimates during Q-learning execution
+            env.render(Q_sa=pi.Q_sa, plot_optimal_policy=True,
+                       step_pause=0.01)
 
     return rewards
 
@@ -97,7 +99,7 @@ def test():
 
     rewards = q_learning(n_timesteps, learning_rate,
                          gamma, policy, epsilon, temp, plot)
-    print(rewards)
+    print("Mean reward per timestep: {:.3f}".format(np.mean(rewards)))
     return rewards
 
 
