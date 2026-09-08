@@ -15,6 +15,15 @@ curve in this repository is drawn against.
 Course assignment (Reinforcement Learning, MSc Computer Science, Leiden
 University, spring 2023).
 
+## Assignment goal
+
+A primer on tabular, value-based reinforcement learning: solve the MDP exactly
+with dynamic programming, which assumes full access to a model of the
+environment, then see how close model-free agents get from experience alone.
+The comparisons that follow isolate three choices every value-based agent
+makes — how it explores, whether it learns from the policy it is following or
+from the greedy one, and how far ahead it looks before bootstrapping.
+
 ## The environment
 
 A 10×7 gridworld based on Sutton & Barto's Windy Gridworld (Example 6.5), made
