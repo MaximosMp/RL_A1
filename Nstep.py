@@ -9,7 +9,7 @@ By Thomas Moerland
 
 import numpy as np
 from Environment import StochasticWindyGridworld
-from Helper import softmax, argmax
+from Helper import softmax
 
 
 class NstepQLearningAgent:
@@ -28,17 +28,18 @@ class NstepQLearningAgent:
             if epsilon is None:
                 raise KeyError("Provide an epsilon")
 
-            if (np.random.uniform(0, 1) > epsilon):
+            if np.random.uniform(0, 1) > epsilon:
+                # NOTE: this is np.argmax, not Helper.argmax, so ties are broken
+                # towards the lowest action index instead of at random. See
+                # "Known issues" in the README.
                 a = np.argmax(self.Q_sa[s])
             else:
-                a = np.random.choice(4)
+                a = np.random.choice(self.n_actions)
 
         elif policy == 'softmax':
             if temp is None:
                 raise KeyError("Provide a temperature")
 
-            # TO DO: Add own code
-            # Replace this with correct action selection
             a = np.random.choice(self.n_actions, p=softmax(self.Q_sa[s], temp))
 
         return a
@@ -48,17 +49,21 @@ class NstepQLearningAgent:
         actions is a list of actions observed in the episode, of length T_ep
         rewards is a list of rewards observed in the episode, of length T_ep
         done indicates whether the final s in states is was a terminal state '''
-        # TO DO: Add own code
-        Tep = len(states)
+        # states holds one more entry than actions/rewards: the state the
+        # episode ended in. T_ep is the number of steps actually taken.
+        T_ep = len(states) - 1
 
-        for t in range(Tep - 1):
+        for t in range(T_ep):
             G = 0
-            m = min(self.n, Tep - t - 1)
+            m = min(self.n, T_ep - t)
 
             for i in range(m):
                 G += self.gamma**i * rewards[t + i]
 
-            if not done or t + m < Tep:
+            # Bootstrap unless the n-step window lands on a terminal state.
+            # Behaviour-preserving: terminal rows of Q_sa are never updated and
+            # so stay zero, making the old wider condition add 0 anyway.
+            if not (done and t + m == T_ep):
                 G += self.gamma**m * np.max(self.Q_sa[states[t + m]][:])
 
             self.Q_sa[states[t]][actions[t]] = self.Q_sa[states[t]][actions[t]] \
@@ -84,6 +89,7 @@ def n_step_Q(n_timesteps, max_episode_length, learning_rate, gamma,
 
         s = env.reset()
         states.append(s)
+        done = False
         for t in range(max_episode_length):
             index += 1
             a = pi.select_action(s, policy, epsilon, temp)
@@ -97,10 +103,10 @@ def n_step_Q(n_timesteps, max_episode_length, learning_rate, gamma,
             if done or index >= n_timesteps:
                 break
 
-        # if plot:
-        #     # Plot the Q-value estimates during n-step Q-learning execution
-        #     env.render(Q_sa=pi.Q_sa, plot_optimal_policy=True,
-        #                 step_pause=0.01)
+        if plot:
+            # Plot the Q-value estimates during n-step Q-learning execution
+            env.render(Q_sa=pi.Q_sa, plot_optimal_policy=True,
+                       step_pause=0.01)
 
         pi.update(states, actions, rewards_per_episode, done)
     return rewards
@@ -123,7 +129,7 @@ def test():
 
     rewards = n_step_Q(n_timesteps, max_episode_length, learning_rate, gamma,
                        policy, epsilon, temp, plot, n=n)
-    print("Obtained rewards: {}".format(rewards))
+    print("Mean reward per timestep: {:.3f}".format(np.mean(rewards)))
 
 
 if __name__ == '__main__':
