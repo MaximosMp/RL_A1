@@ -1,21 +1,39 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Q-value iteration on the Stochastic Windy Gridworld (assignment 1).
+
+usage: python DynamicProgramming.py [--repetitions N] [--save-figures] [--render]
+
+Solves the MDP exactly using the environment's transition and reward model,
+then rolls out the greedy policy to measure the average reward per timestep.
+That figure is the "DP optimum" line in the learning-curve plots produced by
+Experiment.py.
+
+  --repetitions N   average the greedy rollout over N episodes (default 1)
+  --save-figures    write step_<n>.png at iterations 0, 8 and convergence
+  --render          show the value estimates during iteration (slow)
+
+Skeleton for the course 'Reinforcement Learning', Leiden University,
+by Thomas Moerland; the Q-value-iteration implementation is our own.
 """
-Practical for course 'Reinforcement Learning',
-Leiden University, The Netherlands
-2022
-By Thomas Moerland
-"""
+import sys
 
 import numpy as np
+
 from Environment import StochasticWindyGridworld
-from Helper import argmax
+
+# Iterations at which the report's intermediate figures were captured.
+FIGURE_ITERATIONS = (0, 8)
+
+# The greedy rollout is bounded so a non-terminating policy cannot hang the
+# script; the converged policy reaches the goal in far fewer steps.
+MAX_ROLLOUT_STEPS = 10000
 
 
 class QValueIterationAgent:
     ''' Class to store the Q-value iteration solution, perform updates, and select the greedy action '''
 
-    def __init__(self, n_states, n_actions, gamma, threshold=0.01):  # , p_sas=None, r_sas=None
+    def __init__(self, n_states, n_actions, gamma):
         self.n_states = n_states
         self.n_actions = n_actions
         self.gamma = gamma
@@ -41,12 +59,11 @@ class QValueIterationAgent:
         self.Q_sa[s, a] = sum_
 
 
-def Q_value_iteration(env, gamma=1.0, threshold=0.001):
+def Q_value_iteration(env, gamma=1.0, threshold=0.001, save_figures=False,
+                      render=False):
     ''' Runs Q-value iteration. Returns a converged QValueIterationAgent object '''
 
     QIagent = QValueIterationAgent(env.n_states, env.n_actions, gamma)
-
-    # TO DO: IMPLEMENT Q-VALUE ITERATION HERE
 
     count = 0
     while True:
@@ -61,69 +78,100 @@ def Q_value_iteration(env, gamma=1.0, threshold=0.001):
                 QIagent.update(s, a, env.p_sas, env.r_sas)
 
                 max_error = max(max_error, abs(x - QIagent.Q_sa[s, a]))
-        if count == 0:
+
+        if (render or save_figures) and count in FIGURE_ITERATIONS:
             env.render(Q_sa=QIagent.Q_sa,
-                        plot_optimal_policy=True, step_pause=0.001)
-            env.saveFig('step_' + str(count))
-        if count == 8:
-            env.render(Q_sa=QIagent.Q_sa,
-                        plot_optimal_policy=True, step_pause=0.001)
-            env.saveFig('step_' + str(count))
+                       plot_optimal_policy=True, step_pause=0.001)
+            if save_figures:
+                env.saveFig('step_' + str(count))
+
         count += 1
         if max_error < threshold:
             break
 
-    env.render(Q_sa=QIagent.Q_sa,
-                plot_optimal_policy=True, step_pause=0.001)
-    env.saveFig('step_' + str(count))
-    print(count)
+    if render or save_figures:
+        env.render(Q_sa=QIagent.Q_sa,
+                   plot_optimal_policy=True, step_pause=0.001)
+        if save_figures:
+            env.saveFig('step_' + str(count))
+
+    print(f"Q-value iteration converged after {count} iterations "
+          f"(threshold {threshold})")
     return QIagent
 
 
-def experiment():
+def greedy_rollout(env, QIagent):
+    """Runs one episode of the greedy policy; returns its mean reward per step."""
+    rewards = []
+    s = env.reset()
+
+    for _ in range(MAX_ROLLOUT_STEPS):
+        a = QIagent.select_action(s)
+        s, r, done = env.step(a)
+        rewards.append(r)
+        if done:
+            break
+    else:
+        print(f"warning: rollout did not terminate within "
+              f"{MAX_ROLLOUT_STEPS} steps")
+
+    return np.sum(rewards) / len(rewards)
+
+
+def experiment(repetitions=1, save_figures=False, render=False):
     gamma = 1.0
     threshold = 0.001
     env = StochasticWindyGridworld(initialize_model=True)
-    env.render()
-    QIagent = Q_value_iteration(env, gamma, threshold)
+    if render or save_figures:
+        env.render()
 
-    # View optimal policy
-    V_s = np.max(QIagent.Q_sa[:], axis=1)
+    QIagent = Q_value_iteration(env, gamma, threshold,
+                                save_figures=save_figures, render=render)
 
-    optimal_value_start_state = V_s[3]
+    # Optimal value of the start state, straight out of the converged Q table.
+    # Ask the environment which state that is rather than hardcoding the index.
+    V_s = np.max(QIagent.Q_sa, axis=1)
+    start_state = env.reset()
+    print(f"V*(start state {start_state}) = {V_s[start_state]:.3f}")
 
-    done = False
-    s = env.reset()
+    # The environment's wind is stochastic, so average the greedy rollout to
+    # get a stable estimate. This is the number Experiment.py plots as the
+    # "DP optimum" horizontal line.
+    means = [greedy_rollout(env, QIagent) for _ in range(repetitions)]
+    mean_reward_per_timestep = float(np.mean(means))
 
-    rewards = []
-
-    step = 0
-    while not done:
-        a = QIagent.select_action(s)
-
-        s_next, r, done = env.step(a)
-        step += 1
-        rewards.append(r)
-        s = s_next
-        # env.render(Q_sa=QIagent.Q_sa,
-        #            plot_optimal_policy=True, step_pause=0.001)
-
-
-    mean_reward_per_timestep = np.sum(rewards) / len(rewards)
-
-    # print("Mean reward per timestep under optimal policy: {}".format(
-    #     mean_reward_per_timestep))
+    print(f"Mean reward per timestep under the optimal policy "
+          f"({repetitions} episode{'s' if repetitions != 1 else ''}): "
+          f"{mean_reward_per_timestep:.3f}")
 
     return mean_reward_per_timestep
 
 
-if __name__ == '__main__':
-    experiment()
-    # mean_rewards_per_run = []
-    # for i in range(50):
-    #     mean_reward_per_timestep = experiment()
-    #     mean_rewards_per_run.append(mean_reward_per_timestep)
+def main(args):
+    usage = __doc__.split("usage: ", 1)[1].split("\n", 1)[0]
 
-    # mean_rewards_per_run = np.sum(
-    #     mean_rewards_per_run) / len(mean_rewards_per_run)
-    # print(mean_rewards_per_run)
+    repetitions, save_figures, render = 1, False, False
+    i = 0
+    while i < len(args):
+        if args[i] == '--repetitions':
+            if i + 1 >= len(args):
+                raise SystemExit("--repetitions needs a value")
+            repetitions = int(args[i + 1])
+            i += 2
+        elif args[i] == '--save-figures':
+            save_figures = True
+            i += 1
+        elif args[i] == '--render':
+            render = True
+            i += 1
+        elif args[i] in ('-h', '--help'):
+            raise SystemExit(__doc__)
+        else:
+            raise SystemExit(f"unknown flag {args[i]!r}\n\nusage: {usage}")
+
+    experiment(repetitions=repetitions, save_figures=save_figures,
+               render=render)
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
