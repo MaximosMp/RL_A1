@@ -27,17 +27,15 @@ class MonteCarloAgent:
             if epsilon is None:
                 raise KeyError("Provide an epsilon")
 
-            if (np.random.uniform(0, 1) > epsilon):
+            if np.random.uniform(0, 1) > epsilon:
                 a = argmax(self.Q_sa[s])
             else:
-                a = np.random.choice(4)
+                a = np.random.choice(self.n_actions)
 
         elif policy == 'softmax':
             if temp is None:
                 raise KeyError("Provide a temperature")
 
-            # TO DO: Add own code
-            # Replace this with correct action selection
             a = np.random.choice(self.n_actions, p=softmax(self.Q_sa[s], temp))
 
         return a
@@ -45,14 +43,17 @@ class MonteCarloAgent:
     def update(self, states, actions, rewards):
         ''' states is a list of states observed in the episode, of length T_ep + 1 (last state is appended)
         actions is a list of actions observed in the episode, of length T_ep
-        rewards is a list of rewards observed in the episode, of length T_ep
-        done indicates whether the final s in states is was a terminal state '''
-        Tep = len(states) - 1  # 101
-        G = np.zeros(Tep + 1)  # 100
+        rewards is a list of rewards observed in the episode, of length T_ep '''
+        # states holds one more entry than actions/rewards, so T_ep is the
+        # number of steps taken. G is one longer so that G[T_ep] == 0 supplies
+        # the terminal return.
+        T_ep = len(states) - 1
+        G = np.zeros(T_ep + 1)
 
-        for t in range(Tep - 1, 0, -1):
+        # NOTE: this stops at t == 1, so the first step of every episode is
+        # never updated. See "Known issues" in the README.
+        for t in range(T_ep - 1, 0, -1):
 
-            # print(states[t])
             G[t] = self.gamma*G[t + 1] + rewards[t]
 
             self.Q_sa[states[t]][actions[t]] = self.Q_sa[states[t]][actions[t]] \
@@ -85,7 +86,6 @@ def monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma,
 
             s_next, r, done = env.step(a)
             rewards_per_episode.append(r)
-            # rewards[_] += r
             rewards.append(r)
             states.append(s_next)
             if done or index >= n_timesteps:
@@ -93,14 +93,12 @@ def monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma,
 
             s = s_next
 
-        # rewards[_] /= t + 1
-
         pi.update(states, actions, rewards_per_episode)
 
-        # if plot:
-        #     # Plot the Q-value estimates during n-step Q-learning execution
-        #     env.render(Q_sa=pi.Q_sa, plot_optimal_policy=True,
-        #                step_pause=0.001)
+        if plot:
+            # Plot the Q-value estimates during Monte Carlo execution
+            env.render(Q_sa=pi.Q_sa, plot_optimal_policy=True,
+                       step_pause=0.001)
     return rewards
 
 
@@ -120,7 +118,7 @@ def test():
 
     rewards = monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma,
                           policy, epsilon, temp, plot)
-    print("Obtained rewards: {}".format(rewards[49999]))
+    print("Mean reward per timestep: {:.3f}".format(np.mean(rewards)))
 
 
 if __name__ == '__main__':
