@@ -73,7 +73,7 @@ python DynamicProgramming.py --save-figures      # write step_0.png, step_8.png,
 python DynamicProgramming.py --render            # watch the value estimates converge
 ```
 
-**The experiments**, one per figure in the report:
+**The experiments**, one per figure:
 
 ```bash
 python Experiment.py exploration      # e-greedy vs softmax        -> exploration.png
